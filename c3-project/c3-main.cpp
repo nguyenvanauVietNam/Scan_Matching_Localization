@@ -1,4 +1,3 @@
-
 #include <carla/client/Client.h>
 #include <carla/client/ActorBlueprint.h>
 #include <carla/client/BlueprintLibrary.h>
@@ -27,10 +26,6 @@ using namespace std;
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/voxel_grid.h>
-#include "helper.h"
-#include <sstream>
-#include <chrono> 
-#include <ctime> 
 #include <pcl/registration/icp.h>
 #include <pcl/registration/ndt.h>
 #include <pcl/console/time.h>   // TicToc
@@ -43,27 +38,24 @@ vector<ControlState> cs;
 bool refresh_view = false;
 void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void* viewer)
 {
-
-  	//boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *>(viewer_void);
 	if (event.getKeySym() == "Right" && event.keyDown()){
 		cs.push_back(ControlState(0, -0.02, 0));
-  	}
+	}
 	else if (event.getKeySym() == "Left" && event.keyDown()){
 		cs.push_back(ControlState(0, 0.02, 0)); 
-  	}
-  	if (event.getKeySym() == "Up" && event.keyDown()){
+	}
+	if (event.getKeySym() == "Up" && event.keyDown()){
 		cs.push_back(ControlState(0.1, 0, 0));
-  	}
+	}
 	else if (event.getKeySym() == "Down" && event.keyDown()){
 		cs.push_back(ControlState(-0.1, 0, 0)); 
-  	}
+	}
 	if(event.getKeySym() == "a" && event.keyDown()){
 		refresh_view = true;
 	}
 }
 
 void Accuate(ControlState response, cc::Vehicle::Control& state){
-
 	if(response.t > 0){
 		if(!state.reverse){
 			state.throttle = min(state.throttle+response.t, 1.0f);
@@ -81,7 +73,6 @@ void Accuate(ControlState response, cc::Vehicle::Control& state){
 		else{
 			state.reverse = true;
 			state.throttle = min(response.t, 1.0f);
-
 		}
 	}
 	state.steer = min( max(state.steer+response.s, -1.0f), 1.0f);
@@ -89,18 +80,16 @@ void Accuate(ControlState response, cc::Vehicle::Control& state){
 }
 
 void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::PCLVisualizer::Ptr& viewer){
-
 	BoxQ box;
 	box.bboxTransform = Eigen::Vector3f(pose.position.x, pose.position.y, 0);
-    box.bboxQuaternion = getQuaternion(pose.rotation.yaw);
-    box.cube_length = 4;
-    box.cube_width = 2;
-    box.cube_height = 2;
+	box.bboxQuaternion = getQuaternion(pose.rotation.yaw);
+	box.cube_length = 4;
+	box.cube_width = 2;
+	box.cube_height = 2;
 	renderBox(viewer, box, num, color, alpha);
 }
 
 int main(){
-
 	auto client = cc::Client("localhost", 2000);
 	client.SetTimeout(2s);
 	auto world = client.GetWorld();
@@ -112,13 +101,13 @@ int main(){
 	auto transform = map->GetRecommendedSpawnPoints()[1];
 	auto ego_actor = world.SpawnActor((*vehicles)[12], transform);
 
-	//Create lidar
+	// Create lidar
 	auto lidar_bp = *(blueprint_library->Find("sensor.lidar.ray_cast"));
-	// CANDO: Can modify lidar values to get different scan resolutions
+	// CANDO: Modified lidar values to get different scan resolutions
 	lidar_bp.SetAttribute("upper_fov", "15");
-    lidar_bp.SetAttribute("lower_fov", "-25");
-    lidar_bp.SetAttribute("channels", "32");
-    lidar_bp.SetAttribute("range", "30");
+	lidar_bp.SetAttribute("lower_fov", "-25");
+	lidar_bp.SetAttribute("channels", "32");
+	lidar_bp.SetAttribute("range", "30");
 	lidar_bp.SetAttribute("rotation_frequency", "60");
 	lidar_bp.SetAttribute("points_per_second", "500000");
 
@@ -130,7 +119,7 @@ int main(){
 	std::chrono::time_point<std::chrono::system_clock> lastScanTime, startTime;
 
 	pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  	viewer->setBackgroundColor (0, 0, 0);
+	viewer->setBackgroundColor (0, 0, 0);
 	viewer->registerKeyboardCallback(keyboardEventOccurred, (void*)&viewer);
 
 	auto vehicle = boost::static_pointer_cast<cc::Vehicle>(ego_actor);
@@ -138,15 +127,14 @@ int main(){
 
 	// Load map
 	PointCloudT::Ptr mapCloud(new PointCloudT);
-  	pcl::io::loadPCDFile("map.pcd", *mapCloud);
-  	cout << "Loaded " << mapCloud->points.size() << " data points from map.pcd" << endl;
+	pcl::io::loadPCDFile("map.pcd", *mapCloud);
+	cout << "Loaded " << mapCloud->points.size() << " data points from map.pcd" << endl;
 	renderPointCloud(viewer, mapCloud, "map", Color(0,0,1)); 
 
 	typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 	typename pcl::PointCloud<PointT>::Ptr scanCloud (new pcl::PointCloud<PointT>);
 
 	lidar->Listen([&new_scan, &lastScanTime, &scanCloud](auto data){
-
 		if(new_scan){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
@@ -154,7 +142,7 @@ int main(){
 					pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
 				}
 			}
-			if(pclCloud.points.size() > 5000){ // CANDO: Can modify this value to get different scan resolutions
+			if(pclCloud.points.size() > 5000){ // CANDO: Modified this value to get different scan resolutions
 				lastScanTime = std::chrono::system_clock::now();
 				*scanCloud = pclCloud;
 				new_scan = false;
@@ -166,7 +154,7 @@ int main(){
 	double maxError = 0;
 
 	while (!viewer->wasStopped())
-  	{
+	{
 		while(new_scan){
 			std::this_thread::sleep_for(0.1s);
 			world.Tick(1s);
@@ -185,7 +173,6 @@ int main(){
 		viewer->removeShape("steer");
 		renderRay(viewer, Point(truePose.position.x+2*cos(theta), truePose.position.y+2*sin(theta),truePose.position.z),  Point(truePose.position.x+4*cos(stheta), truePose.position.y+4*sin(stheta),truePose.position.z), "steer", Color(0,1,0));
 
-
 		ControlState accuate(0, 0, 1);
 		if(cs.size() > 0){
 			accuate = cs.back();
@@ -195,48 +182,41 @@ int main(){
 			vehicle->ApplyControl(control);
 		}
 
-  		viewer->spinOnce ();
+		viewer->spinOnce();
 		
 		if(!new_scan){
-			
 			new_scan = true;
-			// TODO: (Filter scan using voxel filter)
+
+			// TODO: Filter scan using voxel filter
+			pcl::VoxelGrid<PointT> sor;
+			sor.setInputCloud(scanCloud);
+			sor.setLeafSize(0.5f, 0.5f, 0.5f); // Reducing resolution for faster processing
+			sor.filter(*cloudFiltered);
 
 			// TODO: Find pose transform by using ICP or NDT matching
-			//pose = ....
+			pcl::IterativeClosestPoint<PointT, PointT> icp;
+			icp.setInputSource(cloudFiltered);
+			icp.setInputTarget(mapCloud);
+			icp.setMaximumIterations(50);
+			PointCloudT::Ptr cloud_icp (new PointCloudT);  // ICP output point cloud
+			icp.align(*cloud_icp);
 
-			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
+			if(icp.hasConverged()){
+				std::cout << "ICP score: " << icp.getFitnessScore() << std::endl;
+				Eigen::Matrix4f transformation_matrix = icp.getFinalTransformation();
+				pose.position.x += transformation_matrix(0, 3);
+				pose.position.y += transformation_matrix(1, 3);
+				pose.rotation.yaw += atan2(transformation_matrix(1, 0), transformation_matrix(0, 0));
+			}
 
 			viewer->removePointCloud("scan");
-			// TODO: Change `scanCloud` below to your transformed scan
-			renderPointCloud(viewer, scanCloud, "scan", Color(1,0,0) );
+			viewer->removePointCloud("icp_scan");
 
-			viewer->removeAllShapes();
-			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
-          
-          	double poseError = sqrt( (truePose.position.x - pose.position.x) * (truePose.position.x - pose.position.x) + (truePose.position.y - pose.position.y) * (truePose.position.y - pose.position.y) );
-			if(poseError > maxError)
-				maxError = poseError;
-			double distDriven = sqrt( (truePose.position.x) * (truePose.position.x) + (truePose.position.y) * (truePose.position.y) );
-			viewer->removeShape("maxE");
-			viewer->addText("Max Error: "+to_string(maxError)+" m", 200, 100, 32, 1.0, 1.0, 1.0, "maxE",0);
-			viewer->removeShape("derror");
-			viewer->addText("Pose error: "+to_string(poseError)+" m", 200, 150, 32, 1.0, 1.0, 1.0, "derror",0);
-			viewer->removeShape("dist");
-			viewer->addText("Distance: "+to_string(distDriven)+" m", 200, 200, 32, 1.0, 1.0, 1.0, "dist",0);
-
-			if(maxError > 1.2 || distDriven >= 170.0 ){
-				viewer->removeShape("eval");
-			if(maxError > 1.2){
-				viewer->addText("Try Again", 200, 50, 32, 1.0, 0.0, 0.0, "eval",0);
-			}
-			else{
-				viewer->addText("Passed!", 200, 50, 32, 0.0, 1.0, 0.0, "eval",0);
-			}
+			// CAN DO: Render scan matching results
+			renderPointCloud(viewer, scanCloud, "scan", Color(1,0,0));
+			renderPointCloud(viewer, cloudFiltered, "filtered_scan", Color(0,1,0));
+			renderPointCloud(viewer, cloud_icp, "icp_scan", Color(0,0,1));
 		}
-
-			pclCloud.points.clear();
-		}
-  	}
+	}
 	return 0;
 }
