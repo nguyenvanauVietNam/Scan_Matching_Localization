@@ -128,9 +128,17 @@ Follow the instructions per the specific README.
 # Student todo
 ### Reference
 
-Github: https://github.com/jckuri/Scan_Matching_Localization/tree/main
-Udacity: https://github.com/udacity/nd0013_cd2693_Exercise_Starter_Code/tree/main/Lesson_7_Project_Scan_Matching_Localization/c3-project
+**Udacity**:
+    https://github.com/udacity/nd0013_cd2693_Exercise_Starter_Code/tree/main/Lesson_7_Project_Scan_Matching_Localization/c3-project
 
-Github: https://github.com/mithul12/Udacity-project_scan-matching-localization
-ChatGPT
-Copilot Support.
+-    **QnA support**
+    
+**Github**:
+ - https://github.com/jckuri/Scan_Matching_Localization/tree/main
+ - https://github.com/mithul12/Udacity-project_scan-matching-localization
+ - https://github.com/damianomuzzolon2/scan_matching_localization
+ - https://github.com/ege2097yilmaz/scan_matching_localization/blob/main/project_3
+
+
+**ChatGPT**
+**Copilot Support**
